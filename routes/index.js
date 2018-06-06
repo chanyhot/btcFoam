@@ -62,7 +62,7 @@ router.get('/data2.js', function(req, res, next) {
             if (_res.statusCode === 200) {
                 var data = Buffer.concat(chunks, size);
                 var info = JSON.parse(data.toString());
-                var marketvalue = JSON.stringify(info.vol_usd);
+                var marketvalue = JSON.stringify(info.market_cap_by_available_supply);
                 res.set('Content-Type', 'application/x-javascript');
                 res.send('var marketvalue = ' + marketvalue);
             } else {
