@@ -1,0 +1,249 @@
+<!DOCTYPE HTML>
+<!--[if lt IE 7 ]> <html lang="zh-CN" class="ieOld ie6"> <![endif]-->
+<!--[if IE 7 ]>    <html lang="zh-CN" class="ieOld ie7"> <![endif]-->
+<!--[if IE 8 ]>    <html lang="zh-CN" class="ieOld ie8"> <![endif]-->
+<!--[if IE 9 ]>    <html lang="zh-CN" class="ie9"> <![endif]-->
+<!--[if IE 10 ]>   <html lang="zh-CN" class="ie10"> <![endif]-->
+<!--[if (gte IE 11)|!(IE)]><!-->
+<html lang="zh-CN">
+<!--<![endif]-->
+
+<head>
+    <meta charset="utf-8">
+    <meta name="renderer" content="webkit">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta http-equiv="Cache-Control" content="no-siteapp" />
+    <meta name="Keywords" content="">
+    <meta name="Description" content="">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <title>BTC泡沫指数图</title>
+    <style>
+    html,
+    body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+    }
+
+    #container {
+        width: 100%;
+        height: 512px;
+        background-color: #f0f0f0;
+    }
+    </style>
+</head>
+
+<body>
+    <div id="container"></div>
+</body>
+<!-- <script src="javascripts/jquery.1.9.1.min.js"></script> -->
+<script src="data1.js"></script>
+<script src="data2.js"></script>
+<script src="https://img.hcharts.cn/highcharts/highcharts.js"></script>
+<script src="https://img.hcharts.cn/highcharts/modules/exporting.js"></script>
+<script src="https://img.hcharts.cn/highcharts/modules/series-label.js"></script>
+<script src="https://img.hcharts.cn/highcharts/modules/oldie.js"></script>
+<script src="https://img.hcharts.cn/highcharts-plugins/highcharts-zh_CN.js"></script>
+<script>
+// var address = $.ajax({url:"http://localhost:3000/data1.json"});
+// var marketvalue = $.ajax({url:"http://localhost:3000/data2.json"});
+
+
+// console.log(address);
+// console.log(marketvalue);
+var arrayAddress = [];
+var arrayMarketvalue = [];
+var arrayFoamIndex = [];
+
+init();
+
+function init() {
+    setArray();
+    setFoamIndex();
+    setHighChart(365);
+    // for(i=0;i<arrayAddress.length;i++){
+    //     console.log(arrayAddress[i].date+" / "+arrayMarketvalue[i].date);
+    //     if(arrayAddress[i].date !== arrayMarketvalue[i].date){
+    //         console.log("++++++++++++++++++++");
+    //     }
+    // }
+}
+
+function setHighChart(length) {
+    var data = arrayFoamIndex;
+    if (data.length > length) {
+        data = arrayFoamIndex.splice(arrayFoamIndex.length - length - 1, arrayFoamIndex.length - 1);
+    }
+    var chart = Highcharts.chart('container', {
+        height:'100%',
+        chart: {
+            zoomType: 'x'
+        },
+        title: {
+            text: 'BTC泡沫指数图'
+        },
+        subtitle: {
+            text: '计算公式：市值(百亿) / 唯一活动地址数(十万)的平方根'
+        },
+        xAxis: {
+            type: 'datetime'
+        },
+        yAxis: {
+            title: {
+                text: '泡沫指数'
+            }
+        },
+        tooltip: {
+            formatter: function() {
+                return Highcharts.dateFormat('%Y-%m-%d', this.x) + '<br/>泡沫指数:' + this.y.toFixed(2);
+            }
+        },
+        legend: {
+            enabled: false
+        },
+        plotOptions: {
+            area: {
+                fillColor: {
+                    linearGradient: {
+                        x1: 0,
+                        y1: 0,
+                        x2: 0,
+                        y2: 1
+                    },
+                    stops: [
+                        [0, Highcharts.getOptions().colors[0]],
+                        [1, Highcharts.Color(Highcharts.getOptions().colors[0]).setOpacity(0).get('rgba')]
+                    ]
+                },
+                marker: {
+                    radius: 2
+                },
+                lineWidth: 1,
+                states: {
+                    hover: {
+                        lineWidth: 1
+                    }
+                },
+                threshold: null
+            }
+        },
+        series: [{
+            name: '近365天数据',
+            type: 'area',
+            data: data
+        }]
+    });
+}
+
+function getLocalTimeS(time) {
+    return new Date(parseInt(time) * 1000).toLocaleString().replace(/:\d{1,2}$/, ' ');
+}
+
+function getLocalTimeMs(time) {
+    return new Date(parseInt(time) * 1).toLocaleString().replace(/:\d{1,2}$/, ' ');
+}
+
+function setArray() {
+    for (i = 0; i < address.length; i++) {
+        var tempVal = String(getLocalTimeS(address[i].x));
+        var tempIndex = tempVal.indexOf(" ");
+        var tempNewVal = tempVal.substring(0, tempIndex);
+        arrayAddress.push({
+            date: tempNewVal,
+            val: address[i].y
+        });
+    }
+    for (i = 0; i < marketvalue.length; i++) {
+        var tempVal = String(getLocalTimeMs(marketvalue[i][0]));
+        var tempIndex = tempVal.indexOf(" ");
+        var tempNewVal = tempVal.substring(0, tempIndex);
+        arrayMarketvalue.push({
+            date: tempNewVal,
+            val: marketvalue[i][1]
+        });
+    }
+    console.log(arrayAddress);
+    console.log(arrayMarketvalue);
+    getArrayIndex();
+}
+
+function dateAdd(startDate) {
+    startDate = new Date(startDate);
+    startDate = +startDate + 1000 * 60 * 60 * 24;
+    startDate = new Date(startDate);
+    var nextStartDate = startDate.getFullYear() + "/" + (startDate.getMonth() + 1) + "/" + startDate.getDate();
+    return nextStartDate;
+}
+
+function setArrayAddress(array, index) {
+    // 掐头
+    array.splice(0, index - 1);
+
+    // 补齐间隔天的数据
+    arrayAddress = [];
+    for (i = 0; i < array.length; i++) {
+        arrayAddress.push(array[i]);
+        arrayAddress.push({
+            date: dateAdd(new Date(array[i].date)),
+            val: array[i].val
+        });
+    }
+
+    // 去尾
+    if (arrayAddress[arrayAddress.length - 1].date < arrayMarketvalue[arrayMarketvalue.length - 1].date) {
+        arrayMarketvalue.splice(arrayMarketvalue.length - 1, 1);
+    } else {
+        arrayAddress.splice(arrayAddress.length - 1, 1);
+    }
+
+    syncArray();
+}
+
+function getArrayIndex() {
+    //找到市值表起始日期最接近地址表的index
+    var date1 = new Date(arrayMarketvalue[0].date).getTime();
+    var date2;
+    var index;
+    for (i = 0; i < arrayAddress.length; i++) {
+        date2 = new Date(arrayAddress[i].date).getTime();
+        if (date1 < date2) {
+            index = i;
+            break;
+        }
+    }
+    setArrayAddress(arrayAddress, index);
+}
+
+function syncArray() {
+    var step = 0;
+    for (i = 0; i < arrayMarketvalue.length - 1; i++) {
+        step = (new Date(arrayMarketvalue[i + 1].date).getTime() - new Date(arrayMarketvalue[i].date).getTime()) / 86400000;
+        if (step > 1) {
+            arrayAddress.splice(i + 1, step - 1);
+            console.log("-----------------" + i + "/" + step);
+            console.log(arrayMarketvalue[i].date);
+            console.log(arrayMarketvalue[i + 1].date);
+        }
+    }
+}
+
+function setFoamIndex() {
+    var index;
+    for (i = 0; i < arrayAddress.length; i++) {
+        index = (arrayMarketvalue[i].val / 10000000000) / Math.sqrt(arrayAddress[i].val / 100000);
+        arrayFoamIndex.push([
+            new Date(arrayMarketvalue[i].date).getTime(),
+            index
+        ]);
+    }
+}
+</script>
+
+</html>
+
